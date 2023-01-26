@@ -1,0 +1,12 @@
+syntax = "proto3";
+package luazhizhan.ignitewasm.blog;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/luazhizhan/ignitewasm/x/blog/types";
+
+// Params defines the parameters for the module.
+message Params {
+  option (gogoproto.goproto_stringer) = false;
+  
+}

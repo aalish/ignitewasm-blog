@@ -103,6 +103,9 @@ import (
 	wasmkeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
 
 	"github.com/luazhizhan/ignitewasm/docs"
+	blogmodule "github.com/luazhizhan/ignitewasm/x/blog"
+	blogmodulekeeper "github.com/luazhizhan/ignitewasm/x/blog/keeper"
+	blogmoduletypes "github.com/luazhizhan/ignitewasm/x/blog/types"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 )
 
@@ -186,6 +189,7 @@ var (
 		transfer.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 		wasm.AppModuleBasic{},
+		blogmodule.AppModuleBasic{},
 		// this line is used by starport scaffolding # stargate/app/moduleBasic
 	)
 
@@ -258,6 +262,8 @@ type App struct {
 	ScopedIBCKeeper      capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper capabilitykeeper.ScopedKeeper
 	scopedWasmKeeper     capabilitykeeper.ScopedKeeper
+
+	BlogKeeper blogmodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// mm is the module manager
@@ -294,6 +300,7 @@ func New(
 		minttypes.StoreKey, distrtypes.StoreKey, slashingtypes.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey, feegrant.StoreKey,
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey, wasm.StoreKey,
+		blogmoduletypes.StoreKey,
 		// this line is used by starport scaffolding # stargate/app/storeKey
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -439,6 +446,16 @@ func New(
 		wasmOpts...,
 	)
 
+	app.BlogKeeper = *blogmodulekeeper.NewKeeper(
+		appCodec,
+		keys[blogmoduletypes.StoreKey],
+		keys[blogmoduletypes.MemStoreKey],
+		app.GetSubspace(blogmoduletypes.ModuleName),
+
+		app.WasmKeeper,
+	)
+	blogModule := blogmodule.NewAppModule(appCodec, app.BlogKeeper, app.AccountKeeper, app.BankKeeper)
+
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
 
 	// The gov proposal types can be individually enabled
@@ -495,6 +512,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
+		blogModule,
 		// this line is used by starport scaffolding # stargate/app/appModule
 	)
 
@@ -522,6 +540,7 @@ func New(
 		feegrant.ModuleName,
 		paramstypes.ModuleName,
 		wasm.ModuleName,
+		blogmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	)
 
@@ -545,6 +564,7 @@ func New(
 		ibchost.ModuleName,
 		ibctransfertypes.ModuleName,
 		wasm.ModuleName,
+		blogmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	)
 
@@ -575,6 +595,7 @@ func New(
 		ibctransfertypes.ModuleName,
 		feegrant.ModuleName,
 		wasm.ModuleName,
+		blogmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	)
 	app.mm.RegisterInvariants(&app.CrisisKeeper)
@@ -599,6 +620,7 @@ func New(
 		ibc.NewAppModule(app.IBCKeeper),
 		transferModule,
 		wasm.NewAppModule(appCodec, &app.WasmKeeper, app.StakingKeeper, app.AccountKeeper, app.BankKeeper),
+		blogModule,
 		// this line is used by starport scaffolding # stargate/app/appModule
 	)
 	app.sm.RegisterStoreDecoders()
@@ -797,6 +819,7 @@ func initParamsKeeper(appCodec codec.BinaryCodec, legacyAmino *codec.LegacyAmino
 	paramsKeeper.Subspace(ibctransfertypes.ModuleName)
 	paramsKeeper.Subspace(ibchost.ModuleName)
 	paramsKeeper.Subspace(wasm.ModuleName)
+	paramsKeeper.Subspace(blogmoduletypes.ModuleName)
 	// this line is used by starport scaffolding # stargate/app/paramSubspace
 
 	return paramsKeeper
